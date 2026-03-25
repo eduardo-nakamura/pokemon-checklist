@@ -1,78 +1,75 @@
 import type { PokemonBase } from "../types/pokemon";
 
+interface PokeApiSpecies {
+  names: { language: { name: string }; name: string }[];
+}
+
 interface PokeApiPokedexEntry {
-  pokemon_species: {
-    name: string;
-    url: string;
-  };
+  pokemon_species: { name: string; url: string };
 }
 
 interface PokeApiEncounter {
-  location_area: {
-    name: string;
-  };
-  version_details: {
-    version: {
-      name: string;
-    };
-  }[];
-}
-
-interface PokeApiSpecies {
-  names: {
-    language: { name: string };
-    name: string;
-  }[];
-  evolution_chain: { url: string };
+  location_area: { name: string };
+  version_details: { version: { name: string } }[];
 }
 
 export const fetchPokemonData = async (
   pokedexName: string, 
-  regionFilter: string,
-  lang: 'pt-BR' | 'en' = 'pt-BR'
+  gameId: string, // Alterado de regionFilter para gameId
+  lang: 'pt-BR' | 'en' | 'ja' = 'pt-BR'
 ): Promise<PokemonBase[]> => {
   const response = await fetch(`https://pokeapi.co/api/v2/pokedex/${pokedexName}`);
   const data = await response.json();
 
+  // Mapeia o gameId para as versões da API (essencial para X/Y)
+  const versionTags = gameId.includes('kalos') ? ['x', 'y'] : [gameId.split('-')[0]];
+
   const pokemonPromises = data.pokemon_entries.map(async (entry: PokeApiPokedexEntry) => {
     try {
-      const pokemonId = entry.pokemon_species.url.split('/').filter(Boolean).pop();
-      const detailRes = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
+      const pokemonId = Number(entry.pokemon_species.url.split('/').filter(Boolean).pop());
+      
+      const [detailRes, encounterRes] = await Promise.all([
+        fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`),
+        fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}/encounters`)
+      ]);
+
       const detailData = await detailRes.json();
+      const encounterData: PokeApiEncounter[] = await encounterRes.json();
 
       const speciesRes = await fetch(detailData.species.url);
       const speciesData: PokeApiSpecies = await speciesRes.json();
       
-      const translatedName = speciesData.names.find(n => 
-        n.language.name === (lang === 'pt-BR' ? 'es' : 'en')
-      )?.name || entry.pokemon_species.name;
+      let translatedName = entry.pokemon_species.name;
+      if (lang === 'ja') {
+        translatedName = speciesData.names.find(n => n.language.name === 'ja-Hrkt')?.name || 
+                         speciesData.names.find(n => n.language.name === 'ja')?.name || translatedName;
+      }
 
-      const encounterRes = await fetch(detailData.location_area_encounters);
-      const encounterData: PokeApiEncounter[] = await encounterRes.json();
-
+      // Filtra rotas comparando com as tags de versão (x, y, etc)
       const routes = encounterData
-        .filter(enc => enc.version_details.some(v => v.version.name.includes(regionFilter)))
-        .map(enc => {
-          let route = enc.location_area.name.replace(/-/g, ' ').replace(/area/g, '').trim();
-          if (lang === 'pt-BR') {
-            route = route
-              .replace(/route/i, 'Rota')
-              .replace(/city/i, 'Cidade')
-              .replace(/woods/i, 'Bosque')
-              .replace(/forest/i, 'Floresta')
-              .replace(/cave/i, 'Caverna');
-          }
-          return route;
+        .filter((enc) => enc.version_details.some((v) => versionTags.includes(v.version.name)))
+        .map((enc) => {
+          const rawName = enc.location_area.name
+            .replace(/-/g, ' ')
+            .replace(/area/g, '')
+            .replace(/kalos/gi, '')
+            .trim();
+          
+          const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+          return lang === 'pt-BR' ? formattedName.replace(/route/i, 'Rota') : formattedName;
         });
 
+      // Remove duplicatas de rotas (áreas diferentes na mesma rota)
+      const uniqueRoutes = Array.from(new Set(routes));
+
       return {
-        id: detailData.id,
-        name: translatedName.charAt(0).toUpperCase() + translatedName.slice(1),
+        id: pokemonId,
+        name: lang === 'ja' ? translatedName : translatedName.charAt(0).toUpperCase() + translatedName.slice(1),
         sprite: detailData.sprites.front_default || '',
-        routes: routes.length > 0 ? routes : ["special_evolution"]
+        routes: uniqueRoutes.length > 0 ? uniqueRoutes : ["Especial / Evolução"]
       };
     } catch (error) {
-      console.error("Erro ao processar Pokémon:", error);
+      console.error("Erro ao buscar:", entry.pokemon_species.name, error);
       return null;
     }
   });

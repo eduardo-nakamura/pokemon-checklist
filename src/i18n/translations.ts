@@ -38,5 +38,25 @@ export const translations = {
     table_status: "Status",
     special_evolution: "Special / Evolution",
     loading: "Syncing with PokeAPI..."
+  },
+  ja: {
+    home_title: "チェックリストを開始するリージョンを選択してください",
+    explore: "冒険を始める",
+    progress: "進捗",
+    main_menu: "メインメニュー",
+    search_placeholder: "例：ルート1、ポッポ...",
+    found_pokemon: "見つかったポケモン",
+    your_progress: "あなたの進捗",
+    settings: "設定",
+    language: "言語",
+    theme_dark: "ダーク",
+    theme_light: "ライト",
+    table_id: "ID",
+    table_sprite: "スプライト",
+    table_pokemon: "ポケモン",
+    table_location: "出現場所",
+    table_status: "ステータス",
+    special_evolution: "特別 / 進化",
+    loading: "ポケAPI同期中..."
   }
 };
