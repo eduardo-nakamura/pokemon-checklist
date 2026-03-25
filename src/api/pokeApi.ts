@@ -18,11 +18,13 @@ export const fetchPokemonData = async (
   gameId: string, // Alterado de regionFilter para gameId
   lang: 'pt-BR' | 'en' | 'ja' = 'pt-BR'
 ): Promise<PokemonBase[]> => {
+  
   const response = await fetch(`https://pokeapi.co/api/v2/pokedex/${pokedexName}`);
   const data = await response.json();
 
   // Mapeia o gameId para as versões da API (essencial para X/Y)
-  const versionTags = gameId.includes('kalos') ? ['x', 'y'] : [gameId.split('-')[0]];
+  const isXY = gameId.toLowerCase().includes('xy') || gameId.toLowerCase().includes('kalos');
+  const versionTags = isXY ? ['x', 'y'] : [gameId.split('-')[0]];
 
   const pokemonPromises = data.pokemon_entries.map(async (entry: PokeApiPokedexEntry) => {
     try {
