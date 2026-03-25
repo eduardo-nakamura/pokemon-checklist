@@ -1,0 +1,42 @@
+export const translations = {
+  "pt-BR": {
+    home_title: "Selecione sua jornada para começar o checklist",
+    explore: "Explorar Região",
+    progress: "Progresso",
+    main_menu: "Menu Principal",
+    search_placeholder: "Ex: route 2 ou pidgey...",
+    found_pokemon: "Pokémon encontrados",
+    your_progress: "Seu Progresso",
+    settings: "Configurações",
+    language: "Idioma",
+    theme_dark: "Escuro",
+    theme_light: "Claro",
+    table_id: "ID",
+    table_sprite: "Sprite",
+    table_pokemon: "Pokémon",
+    table_location: "Localização",
+    table_status: "Status",
+    special_evolution: "Especial / Evolução",
+    loading: "Sincronizando com PokeAPI..."
+  },
+  en: {
+    home_title: "Select your journey to start the checklist",
+    explore: "Explore Region",
+    progress: "Progress",
+    main_menu: "Main Menu",
+    search_placeholder: "Ex: route 2 or pidgey...",
+    found_pokemon: "Pokémon found",
+    your_progress: "Your Progress",
+    settings: "Settings",
+    language: "Language",
+    theme_dark: "Dark",
+    theme_light: "Light",
+    table_id: "ID",
+    table_sprite: "Sprite",
+    table_pokemon: "Pokémon",
+    table_location: "Location",
+    table_status: "Status",
+    special_evolution: "Special / Evolution",
+    loading: "Syncing with PokeAPI..."
+  }
+};
