@@ -4,7 +4,7 @@ export const translations = {
     explore: "Explorar Região",
     progress: "Progresso",
     main_menu: "Menu Principal",
-    search_placeholder: "Ex: route 2 ou pidgey...",
+    search_placeholder: 'Ex: "rota 1" ou pidgey...',
     found_pokemon: "Pokémon encontrados",
     your_progress: "Seu Progresso",
     settings: "Configurações",
@@ -17,14 +17,21 @@ export const translations = {
     table_location: "Localização",
     table_status: "Status",
     special_evolution: "Especial / Evolução",
-    loading: "Sincronizando com PokeAPI..."
+    loading: "Sincronizando com PokeAPI...",
+    // Novas chaves de Backup e Dados
+    backup_title: "Gestão de Dados",
+    export_save: "Exportar Save",
+    import_save: "Importar Save",
+    import_success: "Importado com sucesso! A página será atualizada.",
+    import_error: "Arquivo de backup inválido!",
+    no_data_export: "Nenhum dado encontrado para exportar."
   },
   en: {
     home_title: "Select your journey to start the checklist",
     explore: "Explore Region",
     progress: "Progress",
     main_menu: "Main Menu",
-    search_placeholder: "Ex: route 2 or pidgey...",
+    search_placeholder: 'Ex: "route 1" or pidgey...',
     found_pokemon: "Pokémon found",
     your_progress: "Your Progress",
     settings: "Settings",
@@ -37,14 +44,21 @@ export const translations = {
     table_location: "Location",
     table_status: "Status",
     special_evolution: "Special / Evolution",
-    loading: "Syncing with PokeAPI..."
+    loading: "Syncing with PokeAPI...",
+    // Data Management keys
+    backup_title: "Data Management",
+    export_save: "Export Save",
+    import_save: "Import Save",
+    import_success: "Imported successfully! The page will reload.",
+    import_error: "Invalid backup file!",
+    no_data_export: "No data found to export."
   },
   ja: {
     home_title: "チェックリストを開始するリージョンを選択してください",
     explore: "冒険を始める",
     progress: "進捗",
     main_menu: "メインメニュー",
-    search_placeholder: "例：ルート1、ポッポ...",
+    search_placeholder: '例：「1ばんどうろ」、ポッポ...',
     found_pokemon: "見つかったポケモン",
     your_progress: "あなたの進捗",
     settings: "設定",
@@ -57,6 +71,13 @@ export const translations = {
     table_location: "出現場所",
     table_status: "ステータス",
     special_evolution: "特別 / 進化",
-    loading: "ポケAPI同期中..."
+    loading: "ポケAPI同期中...",
+    // データ管理
+    backup_title: "データ管理",
+    export_save: "セーブ書き出し",
+    import_save: "セーブ読み込み",
+    import_success: "インポートに成功しました！ページを更新します。",
+    import_error: "無効なバックアップファイルです！",
+    no_data_export: "エクスポートするデータが見つかりません。"
   }
 };

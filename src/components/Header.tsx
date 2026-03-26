@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Settings, Globe, Moon, Sun } from 'lucide-react'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useTranslation } from '../hooks/useTranslation'
+import { BackupManager } from './BackupManager'
+
 
 export function Header () {
   const navigate = useNavigate()
@@ -109,6 +111,7 @@ export function Header () {
                     />
                   </div>
                 </button>
+                <BackupManager />
               </div>
             </>
           )}
