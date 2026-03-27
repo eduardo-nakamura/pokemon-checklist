@@ -1,15 +1,13 @@
 export function Footer() {
   return (
-    <footer className="w-full bg-slate-900 border-t border-slate-800 py-8 mt-auto">
-      <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-slate-500 text-sm font-medium">
-          © {new Date().getFullYear()} PokéCheck - Checklist de Captura
-        </p>
-        <div className="flex gap-6 text-xs font-black text-slate-600 uppercase tracking-widest">
-          <span className="hover:text-red-600 cursor-pointer transition-colors">Github</span>
-          <span className="hover:text-red-600 cursor-pointer transition-colors">PokeAPI</span>
-        </div>
-      </div>
+    <footer className="mt-10 p-6 text-center text-[10px] text-slate-500 border-t border-slate-800">
+      <p>
+        Dados fornecidos pela <a href="https://pokeapi.co/" target="_blank" className="underline hover:text-blue-500">PokéAPI</a>.
+      </p>
+      <p className="mt-2">
+        Pokémon e os nomes dos personagens são marcas registradas da Nintendo, Creatures Inc. e Game Freak. 
+        Este é um projeto de fã sem fins lucrativos.
+      </p>
     </footer>
   );
 }
