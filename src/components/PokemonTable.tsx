@@ -37,7 +37,8 @@ const { isDarkMode } = useSettingsStore();
   }
 
   return (
-    <table className="w-full border-collapse">
+    <div className='w-full overflow-x-auto '>
+    <table className="w-full border-collapse min-w-[600px]">
       <thead>
         <tr className="border-b border-slate-700 bg-slate-800/30">
           <th className="p-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('table_id')}</th>
@@ -119,5 +120,6 @@ const { isDarkMode } = useSettingsStore();
         })}
       </tbody>
     </table>
+    </div>
   );
 }
