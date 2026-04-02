@@ -10,14 +10,20 @@ import { PokemonTable } from '../components/PokemonTable'
 import { DashboardCheckList } from '../components/DashboardCheckList'
 import { SubRegionNav } from '../components/SubRegionNav'
 import { useTranslation } from '../hooks/useTranslation'
+import { useDebounce } from '../hooks/useDebounce'
+import { SubRegionCombobox } from '../components/SubRegionCombobox'
 
 export function GameChecklist () {
   const { gameId } = useParams<{ gameId: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
+
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedRoute, setSelectedRoute] = useState('all')
+  const debouncedSearch = useDebounce(searchTerm, 300)
 
   const { language, isDarkMode } = useSettingsStore()
+  // 1. Pegamos a togglePokemon da Store
   const { capturedByGame, togglePokemon } = usePokemonStore()
 
   const game = SUPPORTED_GAMES.find(g => g.id === gameId)
@@ -33,33 +39,26 @@ export function GameChecklist () {
   })
 
   // Dashboard
-  
   const totalPokemon = list.length
   const capturedCount = checkedIds.length
   const percentage =
     totalPokemon > 0 ? Math.round((capturedCount / totalPokemon) * 100) : 0
 
-  // Lógica de Filtro com Suporte a Aspas ("Busca Exata")
   const filteredList = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase()
-    if (!query) return list
-
-    const isExact =
-      query.startsWith('"') && query.endsWith('"') && query.length > 2
-    const term = isExact ? query.slice(1, -1) : query
-
     return list.filter(p => {
-      const nameMatch = isExact
-        ? p.name.toLowerCase() === term
-        : p.name.toLowerCase().includes(term)
-
-      const routeMatch = p.routes.some(r =>
-        isExact ? r.toLowerCase() === term : r.toLowerCase().includes(term)
-      )
-
-      return nameMatch || routeMatch
+      const nameMatch = p.name
+        .toLowerCase()
+        .includes(debouncedSearch.toLowerCase())
+      const routeMatch =
+        selectedRoute === 'all' ? true : p.routes.includes(selectedRoute)
+      return nameMatch && routeMatch
     })
-  }, [list, searchTerm])
+  }, [list, debouncedSearch, selectedRoute])
+
+  const allRoutes = useMemo(() => {
+    const routes = list.flatMap(p => p.routes)
+    return ['all', ...Array.from(new Set(routes)).sort()]
+  }, [list])
 
   if (!game) return null
 
@@ -77,34 +76,42 @@ export function GameChecklist () {
           ← {t('main_menu')}
         </button>
 
-        <header className='flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4'>
+        <header className='flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 '>
           <div className='flex flex-col'>
             <h1 className='text-3xl font-black'>{game.name}</h1>
             <p className='text-slate-400 text-sm'>Total: {list.length}</p>
           </div>
 
-          <div className='relative w-full md:w-80'>
-            <input
-              type='text'
-              placeholder='Ex: "Rota 1" ou Chespin'
-              className={`w-full p-3 rounded-xl border outline-none focus:ring-2 focus:ring-red-500 transition-all ${
-                isDarkMode
-                  ? 'bg-slate-800 border-slate-700'
-                  : 'bg-white border-slate-200 shadow-sm'
-              }`}
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+          <div className='flex flex-col md:flex-row gap-4 w-full md:w-auto'>
+            <div className='flex-1 md:w-64'>
+              <label className='block text-[10px] font-black uppercase text-slate-500 mb-1 ml-1 tracking-widest'>
+                Pokémon
+              </label>
+              <input
+                type='text'
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className='w-full p-3 rounded-xl border bg-white dark:bg-slate-800 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all'
+                placeholder='Ex: Pikachu...'
+              />
+            </div>
+
+            <SubRegionCombobox
+                allRoutes={allRoutes}
+                selectedRoute={selectedRoute}
+                onSelectRoute={setSelectedRoute}
+                isDarkMode={isDarkMode}
+              />
           </div>
         </header>
 
         <SubRegionNav currentGame={game} />
-        {/* <ProgressBar caught={checkedIds.length} total={list.length} /> */}
+
+        {/* 2. Removida a prop pokemonList que não é mais usada */}
         <DashboardCheckList
           progress={percentage}
           total={totalPokemon}
           captured={capturedCount}
-          pokemonList={list}
         />
 
         <div
@@ -114,12 +121,15 @@ export function GameChecklist () {
               : 'bg-white border-slate-200'
           }`}
         >
+          {/* 3. Atualizado o onToggle para passar (gameId, pokemonObject) */}
+          {/* 4. Adicionada a prop gameId necessária para a tabela */}
           <PokemonTable
             list={filteredList}
             isLoading={isLoading}
             checkedIds={checkedIds}
-            onToggle={id => togglePokemon(game.id, id)}
-            highlight={searchTerm.replace(/"/g, '')} // Passamos o termo para o realce
+            gameId={game.id}
+            onToggle={(gameId, pokemon) => togglePokemon(gameId, pokemon)}
+            highlight={debouncedSearch}
           />
         </div>
       </div>

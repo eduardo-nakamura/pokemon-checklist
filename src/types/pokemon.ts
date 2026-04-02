@@ -19,3 +19,8 @@ export const SUPPORTED_GAMES: GameConfig[] = [
   { id: 'xy-mountain', name: 'Kalos (Mountain)', pokedexName: 'kalos-mountain', group: 'xy' },
   { id: 'red-blue', name: 'Kanto (Red/Blue)', pokedexName: 'kanto' },
 ];
+
+export const HOME_GAMES: GameConfig[] = [
+  { id: 'xy-central', name: 'Kalos (Central)', pokedexName: 'kalos-central', group: 'xy' },  
+  { id: 'red-blue', name: 'Kanto (Red/Blue)', pokedexName: 'kanto' },
+];

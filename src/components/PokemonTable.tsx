@@ -1,199 +1,121 @@
+import { useMemo, useState } from 'react'
 import type { PokemonBase } from '../types/pokemon'
+import { PokemonTableRow } from './PokemonTableRow'
 import { useTranslation } from '../hooks/useTranslation'
 import { useSettingsStore } from '../store/useSettingsStore'
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 
 interface PokemonTableProps {
   list: PokemonBase[]
   checkedIds: number[]
-  onToggle: (id: number) => void
+  // MUDANÇA: Ajustado para receber o objeto completo e o gameId
+  onToggle: (gameId: string, pokemon: PokemonBase) => void
+  gameId: string // Precisamos saber qual o jogo atual para salvar na store
   isLoading: boolean
-  highlight?: string 
+  highlight?: string
 }
 
-const HighlightText = ({
-  text,
-  highlight
-}: {
-  text: string
-  highlight?: string
-}) => {
-  if (!highlight || !highlight.trim()) return <>{text}</>
-  const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const parts = text.split(new RegExp(`(${escapedHighlight})`, 'gi'))
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.toLowerCase() === highlight.toLowerCase() ? (
-          <mark
-            key={i}
-            className='bg-yellow-400/40 text-current rounded-sm px-0.5'
-          >
-            {part}
-          </mark>
-        ) : (
-          part
-        )
-      )}
-    </>
-  )
-}
+type SortKey = 'id' | 'name' | 'captureRate' | 'status' | 'routes'
 
 export function PokemonTable ({
   list,
   checkedIds,
   onToggle,
+  gameId,
   isLoading,
   highlight
 }: PokemonTableProps) {
   const { t } = useTranslation()
   const { isDarkMode } = useSettingsStore()
+  const [sortConfig, setSortConfig] = useState<{
+    key: SortKey
+    direction: 'asc' | 'desc'
+  } | null>(null)
 
-  if (isLoading) {
-    return (
-      <div className='p-20 text-center text-slate-500 font-bold'>
-        {t('loading')}
-      </div>
-    )
+  const sortedList = useMemo(() => {
+    const sortableItems = [...list]
+
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        if (sortConfig.key === 'status') {
+          const aCaught = checkedIds.includes(a.id)
+          const bCaught = checkedIds.includes(b.id)
+          if (aCaught === bCaught) return 0
+          return sortConfig.direction === 'asc' ? (aCaught ? 1 : -1) : (aCaught ? -1 : 1)
+        }
+
+        if (sortConfig.key === 'routes') {
+          const aLoc = a.routes.join(', ').toLowerCase()
+          const bLoc = b.routes.join(', ').toLowerCase()
+          return sortConfig.direction === 'asc' ? aLoc.localeCompare(bLoc) : bLoc.localeCompare(aLoc)
+        }
+
+        const key = sortConfig.key as keyof PokemonBase
+        const aValue = a[key]
+        const bValue = b[key]
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
+        return 0
+      })
+    }
+    return sortableItems
+  }, [list, sortConfig, checkedIds])
+
+  const requestSort = (key: SortKey) => {
+    let direction: 'asc' | 'desc' = 'asc'
+    if (sortConfig?.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
   }
 
+  // Componente auxiliar para os Headers para limpar o JSX
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortConfig?.key !== column) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />
+    return sortConfig.direction === 'asc' ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />
+  }
+
+  if (isLoading) return <div className='p-20 text-center text-slate-500 font-bold'>{t('loading')}</div>
+
   return (
-    <div className='w-full overflow-x-auto '>
-      <table className='w-full border-collapse min-w-150'>
+    <div className='w-full overflow-x-auto border rounded-xl overflow-hidden shadow-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'>
+      <table className='w-full border-collapse min-w-200'>
         <thead>
-          <tr className='border-b border-slate-700 bg-slate-800/30'>
-            <th className='p-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest'>
-              {t('table_id')}
-            </th>
-            <th className='p-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest'>
-              {t('table_sprite')}
-            </th>
-            <th className='p-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest'>
-              {t('table_pokemon')}
-            </th>
-            <th className='p-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest'>
-              {t('table_location')}
-            </th>
-            <th className='p-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest'>
-              {t('table_capturerate')}
-            </th>
-            <th className='p-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest'>
-              {t('table_status')}
-            </th>
+          <tr className={`text-left text-[10px] uppercase font-black tracking-wider border-b ${isDarkMode ? 'bg-slate-800/50 text-slate-400 border-slate-700' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+            {[
+              { id: 'id', label: 'ID' },
+              { id: 'sprite', label: 'Sprite', sortable: false },
+              { id: 'name', label: 'Pokémon' },
+              { id: 'routes', label: 'Location' },
+              { id: 'captureRate', label: 'Capture Rate', center: true },
+              { id: 'status', label: 'Status', center: true }
+            ].map((col) => (
+              <th
+                key={col.id}
+                onClick={() => col.sortable !== false && requestSort(col.id as SortKey)}
+                className={`p-4 group select-none ${col.sortable !== false ? 'cursor-pointer hover:text-blue-500 transition-colors' : ''} ${col.center ? 'text-center' : ''}`}
+              >
+                <div className={`flex items-center gap-1 ${col.center ? 'justify-center' : ''}`}>
+                  {col.label}
+                  {col.sortable !== false && <SortIcon column={col.id as SortKey} />}
+                </div>
+              </th>
+            ))}
           </tr>
         </thead>
-        <tbody
-          className={`divide-y transition-colors ${
-            isDarkMode ? 'divide-slate-700/50' : 'divide-slate-200'
-          }`}
-        >
-          {list.map(pokemon => {
-            const isCaught = checkedIds.includes(pokemon.id)
-
-            return (
-              <tr
-                key={pokemon.id}
-                // Adicionado clique na linha inteira
-                onClick={() => onToggle(pokemon.id)}
-                className={`group transition-colors cursor-pointer select-none ${
-                  isCaught
-                    ? isDarkMode
-                      ? 'bg-green-500/10' 
-                      : 'bg-green-50/60'
-                    : isDarkMode
-                    ? 'hover:bg-slate-700/20'
-                    : 'hover:bg-slate-50'
-                }`}
-              >
-                {/* ID do Pokémon */}
-                <td
-                  className={`p-4 text-xs font-mono transition-colors ${
-                    isDarkMode ? 'text-slate-100' : 'text-slate-900'
-                  }`}
-                >
-                  #{String(pokemon.id).padStart(3, '0')}
-                </td>
-
-                {/* Sprite */}
-                <td className='p-4'>
-                  <img
-                    src={pokemon.sprite}
-                    alt={pokemon.name}
-                    className='w-10 h-10 object-contain group-hover:scale-110 transition-transform'
-                  />
-                </td>
-
-                {/* Nome do Pokémon */}
-                <td
-                  className={`p-4 font-bold transition-colors ${
-                    isCaught
-                      ? isDarkMode
-                        ? 'text-green-400'
-                        : 'text-green-600'
-                      : isDarkMode
-                      ? 'text-slate-200'
-                      : 'text-slate-800'
-                  }`}
-                >
-                  <HighlightText text={pokemon.name} highlight={highlight} />
-                </td>
-
-                {/* Localização / Rotas */}
-                <td
-                  className={`p-4 text-sm italic transition-colors ${
-                    isDarkMode ? 'text-slate-100' : 'text-slate-600'
-                  }`}
-                >
-                  <div className='flex flex-wrap gap-1'>
-                    {pokemon.routes.map((route, index) => (
-                      <span key={index}>
-                        <HighlightText text={route} highlight={highlight} />
-                        {index < pokemon.routes.length - 1 && ', '}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-
-                {/* Chance captura */}
-                <td className='p-4 text-center'>
-                  <div className='flex flex-col items-center gap-1'>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        pokemon.captureRate > 200
-                          ? 'bg-green-100 text-green-700'
-                          : pokemon.captureRate > 100
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {pokemon.captureRate > 150
-                        ? 'Fácil'
-                        : pokemon.captureRate > 50
-                        ? 'Médio'
-                        : 'Difícil'}
-                    </span>
-                    <span className='text-xs text-slate-500'>
-                      {pokemon.captureRate}
-                    </span>
-                  </div>
-                </td>
-
-                {/* Checkbox de Status */}
-                <td className='p-4 text-center'>
-                  <input
-                    type='checkbox'
-                    checked={isCaught}
-                    // pointer-events-none evita que o clique duplo (tr + checkbox) cause conflitos
-                    onChange={() => {}} 
-                    className={`w-5 h-5 rounded transition-all cursor-pointer pointer-events-none ${
-                      isDarkMode
-                        ? 'border-slate-600 bg-slate-800 text-green-600 focus:ring-green-500'
-                        : 'border-slate-300 bg-white text-green-500 focus:ring-green-400 shadow-sm'
-                    }`}
-                  />
-                </td>
-              </tr>
-            )
-          })}
+        <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
+          {sortedList.map(pokemon => (
+            <PokemonTableRow
+              key={pokemon.id}
+              pokemon={pokemon}
+              gameId={gameId} // Passando o ID do jogo para a linha
+              isCaught={checkedIds.includes(pokemon.id)}
+              onToggle={onToggle} // Agora alinhado com (gameId, pokemon)
+              isDarkMode={isDarkMode}
+              highlight={highlight}
+            />
+          ))}
         </tbody>
       </table>
     </div>

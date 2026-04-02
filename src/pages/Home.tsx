@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { SUPPORTED_GAMES } from '../types/pokemon';
+import { HOME_GAMES } from '../types/pokemon';
 import { GameCard } from '../components/GameCard';
 import { fetchPokemonData } from '../api/pokeApi';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -12,7 +12,7 @@ export function Home() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    SUPPORTED_GAMES.forEach(game => {
+    HOME_GAMES.forEach(game => {
       const region = game.pokedexName.split('-')[0];
       queryClient.prefetchQuery({
         queryKey: ['pokedex', game.id],
@@ -36,7 +36,7 @@ export function Home() {
       </header>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-        {SUPPORTED_GAMES.map(game => (
+        {HOME_GAMES.map(game => (
           <GameCard key={game.id} game={game} />
         ))}
       </div>
