@@ -1,7 +1,9 @@
 import type { PokemonBase } from "../types/pokemon";
+import { translations } from '../i18n/translations';
 
 interface PokeApiSpecies {
   names: { language: { name: string }; name: string }[];
+  capture_rate: number;
 }
 
 interface PokeApiPokedexEntry {
@@ -10,19 +12,21 @@ interface PokeApiPokedexEntry {
 
 interface PokeApiEncounter {
   location_area: { name: string };
-  version_details: { version: { name: string } }[];
+  version_details: { 
+    version: { name: string };
+    encounter_details: { method: { name: string } }[];
+  }[];
 }
 
 export const fetchPokemonData = async (
   pokedexName: string, 
-  gameId: string, // Alterado de regionFilter para gameId
+  gameId: string, 
   lang: 'pt-BR' | 'en' | 'ja' = 'pt-BR'
 ): Promise<PokemonBase[]> => {
   
   const response = await fetch(`https://pokeapi.co/api/v2/pokedex/${pokedexName}`);
   const data = await response.json();
 
-  // Mapeia o gameId para as versões da API (essencial para X/Y)
   const isXY = gameId.toLowerCase().includes('xy') || gameId.toLowerCase().includes('kalos');
   const versionTags = isXY ? ['x', 'y'] : [gameId.split('-')[0]];
 
@@ -47,28 +51,46 @@ export const fetchPokemonData = async (
                          speciesData.names.find(n => n.language.name === 'ja')?.name || translatedName;
       }
 
-      // Filtra rotas comparando com as tags de versão (x, y, etc)
+      // Processamento de Rotas e Métodos de Encontro
       const routes = encounterData
         .filter((enc) => enc.version_details.some((v) => versionTags.includes(v.version.name)))
         .map((enc) => {
-          const rawName = enc.location_area.name
+          const versionDetail = enc.version_details.find((v) => versionTags.includes(v.version.name));
+          
+          // 1. Extraímos o método original da API (ex: walk, old-rod)
+          const methodFromApi = versionDetail?.encounter_details[0]?.method.name || '';
+          
+          // 2. Formatamos para bater com as chaves do seu translations.ts (ex: walk, old_rod)
+          const methodKey = methodFromApi.replace(/-/g, '_') as keyof typeof translations['en'];
+          
+          // 3. Buscamos a tradução. Se não existir no dicionário, usamos o nome original.
+          const methodLabel = translations[lang][methodKey] || methodFromApi;
+
+          let locationName = enc.location_area.name
             .replace(/-/g, ' ')
             .replace(/area/g, '')
             .replace(/kalos/gi, '')
             .trim();
           
-          const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-          return lang === 'pt-BR' ? formattedName.replace(/route/i, 'Rota') : formattedName;
+          const routeWord = translations[lang]['route'] || 'Route';
+          locationName = locationName.replace(/route/i, routeWord);
+          
+          const formattedName = locationName.charAt(0).toUpperCase() + locationName.slice(1);
+          
+          return methodFromApi ? `${formattedName} (${methodLabel})` : formattedName;
         });
 
-      // Remove duplicatas de rotas (áreas diferentes na mesma rota)
       const uniqueRoutes = Array.from(new Set(routes));
+
+      // Busca a tradução de "Especial / Evolução" do seu arquivo
+      const specialEvolutionLabel = translations[lang]['special_evolution'] || "Special / Evolution";
 
       return {
         id: pokemonId,
         name: lang === 'ja' ? translatedName : translatedName.charAt(0).toUpperCase() + translatedName.slice(1),
         sprite: detailData.sprites.front_default || '',
-        routes: uniqueRoutes.length > 0 ? uniqueRoutes : ["Especial / Evolução"]
+        routes: uniqueRoutes.length > 0 ? uniqueRoutes : [specialEvolutionLabel],
+        captureRate: speciesData.capture_rate
       };
     } catch (error) {
       console.error("Erro ao buscar:", entry.pokemon_species.name, error);

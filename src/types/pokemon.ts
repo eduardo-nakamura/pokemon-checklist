@@ -3,6 +3,7 @@ export interface PokemonBase {
   name: string;
   sprite: string;
   routes: string[];
+  captureRate: number;
 }
 
 export interface GameConfig {
