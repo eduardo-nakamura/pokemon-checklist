@@ -88,7 +88,7 @@ export const fetchPokemonData = async (
       return {
         id: pokemonId,
         name: lang === 'ja' ? translatedName : translatedName.charAt(0).toUpperCase() + translatedName.slice(1),
-        sprite: detailData.sprites.front_default || '',
+        sprite: detailData.sprites.front_default ,
         routes: uniqueRoutes.length > 0 ? uniqueRoutes : [specialEvolutionLabel],
         captureRate: speciesData.capture_rate
       };
