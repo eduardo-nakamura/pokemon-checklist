@@ -72,12 +72,12 @@ export const PokemonTableRow = React.memo(
             src={pokemon.sprite}
             alt={pokemon.name}
             loading='lazy'
+            decoding='async'
             // Estratégia: Se a imagem falhar, carrega um placeholder e diminui a opacidade
             onError={e => {
               const target = e.target as HTMLImageElement
-              target.src =
-                'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png'
-              target.classList.add('opacity-20', 'grayscale')
+              // 3. FALLBACK RÁPIDO: O GitHub costuma ser 3x mais rápido que a PokeAPI no mobile
+              target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`
             }}
             className={`w-10 h-10 object-contain group-hover:scale-125 transition-transform duration-300 relative z-10
         ${!pokemon.sprite ? 'opacity-0' : 'opacity-100'}`}
@@ -86,7 +86,7 @@ export const PokemonTableRow = React.memo(
           {/* Skeleton/Placeholder de fundo enquanto carrega */}
           <div
             className={`absolute inset-0 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse -z-0 
-      ${pokemon.sprite ? 'hidden' : 'block'}`}
+            ${pokemon.sprite ? 'hidden' : 'block'}`}
           />
         </td>
 
