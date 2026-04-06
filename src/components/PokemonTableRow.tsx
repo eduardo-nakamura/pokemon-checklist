@@ -85,7 +85,7 @@ export const PokemonTableRow = React.memo(
 
           {/* Skeleton/Placeholder de fundo enquanto carrega */}
           <div
-            className={`absolute inset-0 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse -z-0 
+            className={`absolute inset-0 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse z-0 
             ${pokemon.sprite ? 'hidden' : 'block'}`}
           />
         </td>

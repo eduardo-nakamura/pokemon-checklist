@@ -19,7 +19,8 @@ export function GameChecklist () {
   const { t } = useTranslation()
 
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedRoute, setSelectedRoute] = useState('all')
+  // const [selectedRoute, setSelectedRoute] = useState('all')
+  const [selectedRoutes, setSelectedRoutes] = useState<string[]>(['all'])
   const debouncedSearch = useDebounce(searchTerm, 300)
 
   const { language, isDarkMode } = useSettingsStore()
@@ -49,11 +50,30 @@ export function GameChecklist () {
       const nameMatch = p.name
         .toLowerCase()
         .includes(debouncedSearch.toLowerCase())
-      const routeMatch =
-        selectedRoute === 'all' ? true : p.routes.includes(selectedRoute)
+
+      const routeMatch = selectedRoutes.includes('all')
+        ? true
+        : p.routes.some(r => selectedRoutes.includes(r))
+
       return nameMatch && routeMatch
     })
-  }, [list, debouncedSearch, selectedRoute])
+  }, [list, debouncedSearch, selectedRoutes])
+
+  const handleToggleRoute = (route: string) => {
+    setSelectedRoutes(prev => {
+      // Se selecionar 'all', limpa o resto
+      if (route === 'all') return ['all']
+
+      const newRoutes = prev.filter(r => r !== 'all')
+
+      if (newRoutes.includes(route)) {
+        const filtered = newRoutes.filter(r => r !== route)
+        return filtered.length === 0 ? ['all'] : filtered
+      } else {
+        return [...newRoutes, route]
+      }
+    })
+  }
 
   const allRoutes = useMemo(() => {
     const routes = list.flatMap(p => p.routes)
@@ -91,17 +111,22 @@ export function GameChecklist () {
                 type='text'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className='w-full p-3 rounded-xl border bg-white dark:bg-slate-800 dark:border-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all'
+                className={`w-full h-11.5 p-3 rounded-xl border transition-all duration-300 outline-none focus:ring-2 focus:ring-blue-600 text-sm font-medium
+    ${
+      isDarkMode
+        ? 'bg-slate-950 border-slate-700 text-slate-100 placeholder-slate-500'
+        : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400'
+    }`}
                 placeholder='Ex: Pikachu...'
               />
             </div>
 
             <SubRegionCombobox
-                allRoutes={allRoutes}
-                selectedRoute={selectedRoute}
-                onSelectRoute={setSelectedRoute}
-                isDarkMode={isDarkMode}
-              />
+              allRoutes={allRoutes}
+              selectedRoutes={selectedRoutes}
+              onToggleRoute={handleToggleRoute}
+              isDarkMode={isDarkMode}
+            />
           </div>
         </header>
 
