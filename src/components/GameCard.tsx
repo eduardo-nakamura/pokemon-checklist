@@ -31,7 +31,7 @@ export function GameCard({ game }: { game: GameConfig }) {
           <span className={`text-2xl font-bold block ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
             {game.name}
           </span>
-          <span className="text-slate-400 text-sm font-medium uppercase tracking-widest">{t('explore')}</span>
+          <span className="text-slate-400 text-sm font-medium uppercase tracking-widest">{game.region}</span>
         </div>
         {total > 0 && (
           <span className={`font-mono text-sm px-2 py-1 rounded ${isDarkMode ? 'text-slate-500 bg-slate-900/50' : 'text-slate-400 bg-slate-100'}`}>
