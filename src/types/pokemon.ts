@@ -4,6 +4,7 @@ export interface PokemonBase {
   sprite: string
   routes: string[]
   captureRate: number
+  availability?: string
 }
 
 export interface GameConfig {

@@ -103,7 +103,30 @@ export const PokemonTableRow = React.memo(
         >
           <HighlightText text={pokemon.name} highlight={highlight} />
         </td>
-
+        <td className='p-4'>
+          {pokemon.availability && (
+            <div className='flex flex-wrap gap-1'>
+              <span
+                className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter border ${
+                  pokemon.availability === 'Both'
+                    ? isDarkMode
+                      ? 'bg-slate-800 text-slate-400 border-slate-700'
+                      : 'bg-slate-100 text-slate-500 border-slate-200'
+                    : pokemon.availability === 'X' ||
+                      pokemon.availability === 'Sun'
+                    ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                    : 'bg-red-500/10 text-red-500 border-red-500/20'
+                }`}
+              >
+                {pokemon.availability === 'Both'
+                  ? gameId.includes('xy')
+                    ? 'X & Y'
+                    : 'Sun & Moon'
+                  : pokemon.availability}
+              </span>
+            </div>
+          )}
+        </td>
         <td
           className={`p-4 text-sm italic ${
             isDarkMode ? 'text-slate-400' : 'text-slate-600'

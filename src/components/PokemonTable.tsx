@@ -15,7 +15,7 @@ interface PokemonTableProps {
   highlight?: string
 }
 
-type SortKey = 'id' | 'name' | 'captureRate' | 'status' | 'routes'
+type SortKey = 'id' | 'name' | 'captureRate' | 'status' | 'routes' | 'availability';
 
 export function PokemonTable ({
   list,
@@ -59,8 +59,8 @@ export function PokemonTable ({
         }
 
         const key = sortConfig.key as keyof PokemonBase
-        const aValue = a[key]
-        const bValue = b[key]
+        const aValue = a[key] ?? ''
+        const bValue = b[key] ?? ''
 
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
@@ -124,6 +124,7 @@ export function PokemonTable ({
               { id: 'id', label: 'ID' },
               { id: 'sprite', label: 'Sprite', sortable: false },
               { id: 'name', label: 'Pokémon' },
+              { id: 'availability', label: 'Games' },
               { id: 'routes', label: 'Location' },
               { id: 'captureRate', label: 'Capture Rate', center: true },
               { id: 'status', label: 'Status', center: true }
