@@ -39,7 +39,8 @@ export const translations = {
     grass_spots: 'Grama (Agitação)',
     bridge_spots: 'Ponte (Sombra)',
     sea_foam: 'Espuma do Mar',
-    route: 'Rota'
+    route: 'Rota',
+    sync: 'Gerar Link'
   },
   en: {
     home_title: 'Select your journey to start the checklist',
@@ -81,7 +82,8 @@ export const translations = {
     grass_spots: 'Shaking Grass',
     bridge_spots: 'Bridge Shadow',
     sea_foam: 'Sea Foam',
-    route: 'Route'
+    route: 'Route',
+    sync: 'Generate Sync Link'
   },
   ja: {
     home_title: 'チェックリストを開始するリージョンを選択してください',
@@ -123,6 +125,7 @@ export const translations = {
     grass_spots: '揺れる草むら',
     bridge_spots: '橋の影',
     sea_foam: '海泡',
-    route: 'どうろ'
+    route: 'どうろ',
+    sync: 'リンクの生成'
   }
 }
