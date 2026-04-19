@@ -43,11 +43,12 @@ export const PokemonTableRow = React.memo(
     isDarkMode,
     highlight
   }: PokemonRowProps) => {
-    
     // Helper para manter o fundo sólido nas colunas fixas durante o hover e seleção
     const getStickyBg = () => {
       if (isCaught) return isDarkMode ? 'bg-[#1a2e25]' : 'bg-[#f0fdf4]' // Verde suave para capturados
-      return isDarkMode ? 'bg-slate-900 group-hover:bg-slate-800' : 'bg-white group-hover:bg-slate-50'
+      return isDarkMode
+        ? 'bg-slate-900 group-hover:bg-slate-800'
+        : 'bg-white group-hover:bg-slate-50'
     }
 
     return (
@@ -73,8 +74,10 @@ export const PokemonTableRow = React.memo(
         </td>
 
         {/* COLUNA 2: SPRITE (FIXA) */}
-        <td className={`p-4 sticky left-13.75 z-10 transition-colors ${getStickyBg()}`}>
-          <div className="relative w-10 h-10">
+        <td
+          className={`p-4 sticky left-13.75 z-10 transition-colors ${getStickyBg()}`}
+        >
+          <div className='relative w-10 h-10'>
             <img
               src={pokemon.sprite}
               alt={pokemon.name}
@@ -98,8 +101,12 @@ export const PokemonTableRow = React.memo(
         <td
           className={`p-4 font-bold sticky left-26.25 z-10 border-r transition-colors ${getStickyBg()} ${
             isCaught
-              ? isDarkMode ? 'text-green-400' : 'text-green-600'
-              : isDarkMode ? 'text-slate-200' : 'text-slate-800'
+              ? isDarkMode
+                ? 'text-green-400'
+                : 'text-green-600'
+              : isDarkMode
+              ? 'text-slate-200'
+              : 'text-slate-800'
           } ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}
         >
           <HighlightText text={pokemon.name} highlight={highlight} />
@@ -131,12 +138,21 @@ export const PokemonTableRow = React.memo(
           )}
         </td>
 
-        <td className={`p-4 text-sm italic ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-          <div className='flex flex-wrap gap-1'>
+        <td
+          className={`p-4 text-sm italic ${
+            isDarkMode ? 'text-slate-400' : 'text-slate-600'
+          }`}
+        >
+          {/* 1. Removemos o 'flex-wrap' e colocamos 'whitespace-nowrap' por padrão.
+      2. No 'sm:' (desktop), voltamos para 'flex-wrap' e 'whitespace-normal'.
+  */}
+          <div className='flex whitespace-nowrap sm:flex-wrap sm:whitespace-normal gap-1'>
             {pokemon.routes.map((route, index) => (
-              <span key={index}>
+              <span key={index} className='flex-shrink-0'>
                 <HighlightText text={route} highlight={highlight} />
-                {index < pokemon.routes.length - 1 && ', '}
+                {index < pokemon.routes.length - 1 && (
+                  <span className='mr-1'>,</span>
+                )}
               </span>
             ))}
           </div>
@@ -153,9 +169,15 @@ export const PokemonTableRow = React.memo(
                   : 'bg-red-100 text-red-700'
               }`}
             >
-              {pokemon.captureRate > 150 ? 'Fácil' : pokemon.captureRate > 50 ? 'Médio' : 'Difícil'}
+              {pokemon.captureRate > 150
+                ? 'Fácil'
+                : pokemon.captureRate > 50
+                ? 'Médio'
+                : 'Difícil'}
             </span>
-            <span className='text-[10px] opacity-50 font-mono'>{pokemon.captureRate}</span>
+            <span className='text-[10px] opacity-50 font-mono'>
+              {pokemon.captureRate}
+            </span>
           </div>
         </td>
 

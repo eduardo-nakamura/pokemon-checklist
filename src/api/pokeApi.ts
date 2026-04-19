@@ -39,14 +39,20 @@ export const fetchPokemonData = async (
   gameId: string,
   lang: 'pt-BR' | 'en' | 'ja' = 'pt-BR'
 ): Promise<PokemonBase[]> => {
-  const response = await fetch(`https://pokeapi.co/api/v2/pokedex/${pokedexName}`)
+  const response = await fetch(
+    `https://pokeapi.co/api/v2/pokedex/${pokedexName}`
+  )
   const data = await response.json()
 
   // Mapeia o idioma para o padrão da PokeAPI (Japonês usa ja-Hrkt)
-  const apiLang = lang === 'ja' ? 'ja-Hrkt' : 'en'
+  const apiLang = lang === 'ja' ? 'ja-hrkt' : 'en'
 
-  const isXY = gameId.toLowerCase().includes('xy') || gameId.toLowerCase().includes('kalos')
-  const isSM = gameId.toLowerCase().includes('sun') || gameId.toLowerCase().includes('moon')
+  const isXY =
+    gameId.toLowerCase().includes('xy') ||
+    gameId.toLowerCase().includes('kalos')
+  const isSM =
+    gameId.toLowerCase().includes('sun') ||
+    gameId.toLowerCase().includes('moon')
 
   let versionTags = [gameId.toLowerCase()]
   if (isXY) versionTags = ['x', 'y']
@@ -55,16 +61,23 @@ export const fetchPokemonData = async (
   const pokemonPromises = data.pokemon_entries.map(
     async (entry: PokeApiPokedexEntry) => {
       try {
-        const speciesData: PokeApiSpecies = await fetchWithRetry(entry.pokemon_species.url)
+        const speciesData: PokeApiSpecies = await fetchWithRetry(
+          entry.pokemon_species.url
+        )
         const pokemonId = speciesData.id
 
         // --- ALTERAÇÃO CRÍTICA AQUI: BUSCA DO NOME TRADUZIDO ---
-        const nameEntry = speciesData.names.find(n => n.language.name === apiLang)
-        const fallbackName = speciesData.names.find(n => n.language.name === 'en')?.name
-          console.log('translatedName')
+        
+        const nameEntry = speciesData.names.find(
+          n => n.language.name === apiLang
+        )
+        const englishName = speciesData.names.find(
+          n => n.language.name === 'en'
+        )?.name
         // Se for japonês, tenta ja-Hrkt. Se for outro, tenta o idioma ou fallback inglês formatado.
-        const translatedName = nameEntry?.name || fallbackName || entry.pokemon_species.name
-        console.log(translatedName)
+        const translatedName =
+          nameEntry?.name || englishName || entry.pokemon_species.name
+
         const regionalVariety = speciesData.varieties.find(
           v => isSM && v.pokemon.name.includes('-alola')
         )
@@ -72,19 +85,30 @@ export const fetchPokemonData = async (
 
         const targetPokemonUrl = regionalVariety
           ? regionalVariety.pokemon.url
-          : defaultVariety?.pokemon.url || `https://pokeapi.co/api/v2/pokemon/${pokemonId}`
+          : defaultVariety?.pokemon.url ||
+            `https://pokeapi.co/api/v2/pokemon/${pokemonId}`
 
         const [detailData, encounterData] = await Promise.all([
-          fetchWithRetry<{ sprites: { front_default: string } }>(targetPokemonUrl),
+          fetchWithRetry<{ sprites: { front_default: string } }>(
+            targetPokemonUrl
+          ),
           fetchWithRetry<PokeApiEncounter[]>(`${targetPokemonUrl}/encounters`)
         ])
 
         const routes = encounterData
-          .filter(enc => enc.version_details.some(v => versionTags.includes(v.version.name)))
+          .filter(enc =>
+            enc.version_details.some(v => versionTags.includes(v.version.name))
+          )
           .map(enc => {
-            const versionDetail = enc.version_details.find(v => versionTags.includes(v.version.name))
-            const methodFromApi = versionDetail?.encounter_details[0]?.method.name || ''
-            const methodKey = methodFromApi.replace(/-/g, '_') as keyof typeof translations['en']
+            const versionDetail = enc.version_details.find(v =>
+              versionTags.includes(v.version.name)
+            )
+            const methodFromApi =
+              versionDetail?.encounter_details[0]?.method.name || ''
+            const methodKey = methodFromApi.replace(
+              /-/g,
+              '_'
+            ) as keyof typeof translations['en']
             const methodLabel = translations[lang][methodKey] || methodFromApi
 
             let locationName = enc.location_area.name
@@ -95,9 +119,12 @@ export const fetchPokemonData = async (
 
             const routeWord = translations[lang]['route'] || 'Route'
             locationName = locationName.replace(/route/i, routeWord)
-            const formattedName = locationName.charAt(0).toUpperCase() + locationName.slice(1)
+            const formattedName =
+              locationName.charAt(0).toUpperCase() + locationName.slice(1)
 
-            return methodFromApi ? `${formattedName} (${methodLabel})` : formattedName
+            return methodFromApi
+              ? `${formattedName} (${methodLabel})`
+              : formattedName
           })
 
         const availableVersions = encounterData
@@ -115,16 +142,22 @@ export const fetchPokemonData = async (
         }
 
         const uniqueRoutes = Array.from(new Set(routes))
-        const specialEvolutionLabel = translations[lang]['special_evolution'] || 'Special / Evolution'
+        const specialEvolutionLabel =
+          translations[lang]['special_evolution'] || 'Special / Evolution'
 
         return {
           id: pokemonId,
           // Se for japonês, mantém como está. Se for ocidental, garante a primeira letra maiúscula.
-          name: lang === 'ja' 
-            ? translatedName 
-            : translatedName.charAt(0).toUpperCase() + translatedName.slice(1),
-          sprite: detailData.sprites.front_default || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`,
-          routes: uniqueRoutes.length > 0 ? uniqueRoutes : [specialEvolutionLabel],
+          name:
+            lang === 'ja'
+              ? translatedName
+              : translatedName.charAt(0).toUpperCase() +
+                translatedName.slice(1),
+          sprite:
+            detailData.sprites.front_default ||
+            `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`,
+          routes:
+            uniqueRoutes.length > 0 ? uniqueRoutes : [specialEvolutionLabel],
           captureRate: speciesData.capture_rate,
           availability: availabilityLabel
         }

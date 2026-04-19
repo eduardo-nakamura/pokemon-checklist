@@ -64,8 +64,6 @@ export function PokemonTable({
   }, [list, sortConfig, checkedIds])
 
   const totalPages = Math.ceil(sortedList.length / itemsPerPage)
-  
-  // Array para os números das páginas (image_348268.png)
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
 
   const paginatedList = useMemo(() => {
@@ -91,60 +89,68 @@ export function PokemonTable({
   if (isLoading) return <div className='p-20 text-center text-slate-500 font-bold'>{t('loading')}</div>
 
   return (
-    <div className={`w-full overflow-x-auto border rounded-xl shadow-sm transition-colors duration-300 ${
+    
+    <div className={`w-full flex flex-col border rounded-xl shadow-sm transition-colors duration-300 ${
       isDarkMode ? 'bg-slate-900 border-slate-700/50' : 'bg-white border-slate-200'
     }`}>
-      <table className='w-full border-collapse min-w-200'>
-        <thead>
-          <tr className={`text-left text-[10px] uppercase font-black tracking-wider border-b ${
-            isDarkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-50 text-slate-500 border-slate-200'
-          }`}>
-            {[
-              { id: 'id', label: 'ID', stickyPos: 'left-0' },
-              { id: 'sprite', label: 'Sprite', sortable: false, stickyPos: 'left-[55px]' },
-              { id: 'name', label: 'Pokémon', stickyPos: 'left-[105px]' },
-              { id: 'availability', label: 'Games' },
-              { id: 'routes', label: 'Location' },
-              { id: 'captureRate', label: 'Capture Rate', center: true },
-              { id: 'status', label: 'Status', center: true }
-            ].map((col, idx) => (
-              <th
-                key={col.id}
-                onClick={() => col.sortable !== false && requestSort(col.id as SortKey)}
-                className={`p-4 group select-none ${col.sortable !== false ? 'cursor-pointer hover:text-blue-500' : ''} ${col.center ? 'text-center' : ''} ${
-                  idx < 3 ? `sticky ${col.stickyPos} z-20 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'}` : ''
-                }`}
-              >
-                <div className={`flex items-center gap-1 ${col.center ? 'justify-center' : ''}`}>
-                  {col.label}
-                  {col.sortable !== false && <SortIcon column={col.id as SortKey} />}
-                </div>
-              </th>
+      
+      
+      <div className="w-full overflow-x-auto">
+        <table className='w-full border-collapse min-w-200'>
+          <thead>
+            <tr className={`text-left text-[10px] uppercase font-black tracking-wider border-b ${
+              isDarkMode ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-50 text-slate-500 border-slate-200'
+            }`}>
+              {[
+                { id: 'id', label: 'ID', stickyPos: 'left-0' },
+                { id: 'sprite', label: 'Sprite', sortable: false, stickyPos: 'left-[55px]' },
+                { id: 'name', label: 'Pokémon', stickyPos: 'left-[105px]' },
+                { id: 'availability', label: 'Games' },
+                { id: 'routes', label: 'Location' },
+                { id: 'captureRate', label: 'Capture Rate', center: true },
+                { id: 'status', label: 'Status', center: true }
+              ].map((col, idx) => (
+                <th
+                  key={col.id}
+                  onClick={() => col.sortable !== false && requestSort(col.id as SortKey)}
+                  className={`p-4 group select-none ${col.sortable !== false ? 'cursor-pointer hover:text-blue-500' : ''} ${col.center ? 'text-center' : ''} ${
+                    idx < 3 ? `sticky ${col.stickyPos} z-20 ${isDarkMode ? 'bg-slate-800' : 'bg-slate-50'}` : ''
+                  }`}
+                >
+                  <div className={`flex items-center gap-1 ${col.center ? 'justify-center' : ''}`}>
+                    {col.label}
+                    {col.sortable !== false && <SortIcon column={col.id as SortKey} />}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
+            {paginatedList.map(pokemon => (
+              <PokemonTableRow
+                key={pokemon.id}
+                pokemon={pokemon}
+                gameId={gameId}
+                isCaught={checkedIds.includes(pokemon.id)}
+                onToggle={onToggle}
+                isDarkMode={isDarkMode}
+                highlight={highlight}
+              />
             ))}
-          </tr>
-        </thead>
-        <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
-          {paginatedList.map(pokemon => (
-            <PokemonTableRow
-              key={pokemon.id}
-              pokemon={pokemon}
-              gameId={gameId}
-              isCaught={checkedIds.includes(pokemon.id)}
-              onToggle={onToggle}
-              isDarkMode={isDarkMode}
-              highlight={highlight}
-            />
-          ))}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
 
-      {/* Paginação com Números (image_348268.png) */}
+      
       <div className={`flex flex-wrap items-center justify-center gap-1 p-4 border-t ${
         isDarkMode ? 'border-slate-700 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'
       }`}>
         <button
           disabled={currentPage === 1}
-          onClick={() => setCurrentPage(prev => prev - 1)}
+          onClick={() => {
+            setCurrentPage(prev => prev - 1)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
           className={`px-3 py-2 text-[10px] font-black uppercase rounded border transition-all disabled:opacity-20 ${
             isDarkMode ? 'bg-slate-700 border-slate-600 text-slate-300' : 'bg-white border-slate-200 text-slate-600'
           }`}
@@ -155,7 +161,10 @@ export function PokemonTable({
         {pageNumbers.map(num => (
           <button
             key={num}
-            onClick={() => setCurrentPage(num)}
+            onClick={() => {
+              setCurrentPage(num)
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }}
             className={`px-3 py-2 text-[10px] font-black rounded border transition-all ${
               currentPage === num 
                 ? 'bg-blue-600 border-blue-600 text-white' 
@@ -168,7 +177,10 @@ export function PokemonTable({
 
         <button
           disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage(prev => prev + 1)}
+          onClick={() => {
+            setCurrentPage(prev => prev + 1)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
           className={`px-3 py-2 text-[10px] font-black uppercase rounded border transition-all disabled:opacity-20 ${
             isDarkMode ? 'bg-slate-700 border-slate-600 text-slate-300' : 'bg-white border-slate-200 text-slate-600'
           }`}

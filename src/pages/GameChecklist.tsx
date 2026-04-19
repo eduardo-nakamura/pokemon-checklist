@@ -56,7 +56,6 @@ export function GameChecklist() {
     setSelectedRoutes(['all'])
   }
 
-  // Lógica de estado do botão de limpar
   const isFilterEmpty = searchTerm === '' && selectedRoutes.includes('all')
 
   const handleToggleRoute = (route: string) => {
@@ -84,7 +83,7 @@ export function GameChecklist() {
   if (!game) return null
 
   return (
-    <div className={`min-h-screen p-4 md:p-8 transition-colors ${
+    <div className={`min-h-screen p-4 md:p-8 transition-colors duration-300 ${
       isDarkMode ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'
     }`}>
       <div className='max-w-5xl mx-auto'>
@@ -95,32 +94,40 @@ export function GameChecklist() {
           ← {t('main_menu')}
         </button>
 
-        <header className='flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 '>
-          <div className='flex flex-col'>
-            <h1 className='text-3xl font-black'>{game.name}</h1>
-            <p className='text-slate-400 text-sm'>Total: {totalPokemon}</p>
+        {/* HEADER: flex-wrap permite que os itens caiam para a linha de baixo no mobile */}
+        <header className='flex flex-wrap justify-between items-end mb-8 gap-6'>
+          <div className='flex flex-col min-w-[200px]'>
+            <h1 className='text-3xl font-black tracking-tight'>{game.name}</h1>
+            <p className='text-slate-400 text-sm font-medium'>Total: {totalPokemon}</p>
           </div>
 
-          <div className='flex flex-col md:flex-row gap-4 w-full md:w-auto items-end'>
-            <div className='flex-1 md:w-64'>
-              <label className='block text-[10px] font-black uppercase text-slate-500 mb-1 ml-1 tracking-widest'>
+          {/* ÁREA DE FILTROS */}
+          <div className='flex flex-wrap items-end gap-4 w-full md:w-auto'>
+            
+            {/* Input de Busca: 100% no mobile, 256px no desktop */}
+            <div className='w-full md:w-64'>
+              <label className='block text-[10px] font-black uppercase text-slate-500 mb-1.5 ml-1 tracking-widest'>
                 {t('pokemon_name')}
               </label>
               <input
                 type='text'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className={`w-full h-11.5 p-3 rounded-xl border transition-all duration-300 outline-none focus:ring-2 focus:ring-blue-600 text-sm font-medium
+                className={`w-full h-11 px-4 rounded-xl border transition-all duration-300 outline-none focus:ring-2 focus:ring-blue-600 text-sm font-medium
                   ${isDarkMode
-                    ? 'bg-slate-950 border-slate-700 text-slate-100 placeholder-slate-500'
-                    : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400'
+                    ? 'bg-slate-950 border-slate-700 text-slate-100 placeholder-slate-500 shadow-inner'
+                    : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400 shadow-sm'
                   }`}
                 placeholder='Ex: Pikachu...'
               />
             </div>
 
-            <div className='flex items-end gap-2 w-full md:w-auto'>
-              <div className="flex-1 md:w-auto">
+            {/* Combobox e Botão Limpar lado a lado */}
+            <div className='flex items-end gap-2 w-full sm:w-auto'>
+              <div className="flex-1 sm:w-56">
+                <label className='block text-[10px] font-black uppercase text-slate-500 mb-1.5 ml-1 tracking-widest sm:hidden'>
+                  {t('location') || 'Location'}
+                </label>
                 <SubRegionCombobox
                   allRoutes={allRoutes}
                   selectedRoutes={selectedRoutes}
@@ -133,9 +140,9 @@ export function GameChecklist() {
                 onClick={handleClearFilters}
                 disabled={isFilterEmpty}
                 title={t('clean')}
-                className={`h-11.5 px-4 flex items-center gap-2 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all
+                className={`h-11 px-4 flex items-center gap-2 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all
                   ${isFilterEmpty 
-                    ? 'opacity-30 cursor-not-allowed grayscale border-slate-300 text-slate-400' 
+                    ? 'opacity-20 cursor-not-allowed grayscale border-slate-300 text-slate-400' 
                     : 'active:scale-95 ' + (isDarkMode 
                         ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white' 
                         : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-600 hover:text-white')
@@ -150,14 +157,17 @@ export function GameChecklist() {
 
         <SubRegionNav currentGame={game} />
 
-        <DashboardCheckList
-          progress={percentage}
-          total={totalPokemon}
-          captured={capturedCount}
-        />
+        <div className="my-8">
+          <DashboardCheckList
+            progress={percentage}
+            total={totalPokemon}
+            captured={capturedCount}
+          />
+        </div>
 
-        <div className={`mt-8 rounded-3xl border overflow-hidden shadow-xl ${
-          isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+        {/* Container da Tabela com arredondamento e sombra */}
+        <div className={`rounded-3xl border overflow-hidden shadow-2xl transition-colors duration-300 ${
+          isDarkMode ? 'bg-slate-800 border-slate-700/50' : 'bg-white border-slate-200'
         }`}>
           <PokemonTable
             list={filteredList}
