@@ -20,23 +20,33 @@ interface PokeApiEncounter {
   }[]
 }
 
+const fetchWithRetry = async <T>(url: string, retries = 3): Promise<T> => {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Erro HTTP! status: ${res.status}`)
+    return (await res.json()) as T
+  } catch (err) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 500))
+      return fetchWithRetry<T>(url, retries - 1)
+    }
+    throw err
+  }
+}
+
 export const fetchPokemonData = async (
   pokedexName: string,
   gameId: string,
   lang: 'pt-BR' | 'en' | 'ja' = 'pt-BR'
 ): Promise<PokemonBase[]> => {
-  const response = await fetch(
-    `https://pokeapi.co/api/v2/pokedex/${pokedexName}`
-  )
+  const response = await fetch(`https://pokeapi.co/api/v2/pokedex/${pokedexName}`)
   const data = await response.json()
 
-  // 1. Identificação correta dos jogos
-  const isXY =
-    gameId.toLowerCase().includes('xy') ||
-    gameId.toLowerCase().includes('kalos')
-  const isSM =
-    gameId.toLowerCase().includes('sun') ||
-    gameId.toLowerCase().includes('moon')
+  // Mapeia o idioma para o padrão da PokeAPI (Japonês usa ja-Hrkt)
+  const apiLang = lang === 'ja' ? 'ja-Hrkt' : 'en'
+
+  const isXY = gameId.toLowerCase().includes('xy') || gameId.toLowerCase().includes('kalos')
+  const isSM = gameId.toLowerCase().includes('sun') || gameId.toLowerCase().includes('moon')
 
   let versionTags = [gameId.toLowerCase()]
   if (isXY) versionTags = ['x', 'y']
@@ -45,53 +55,36 @@ export const fetchPokemonData = async (
   const pokemonPromises = data.pokemon_entries.map(
     async (entry: PokeApiPokedexEntry) => {
       try {
-        const speciesRes = await fetch(entry.pokemon_species.url)
-        const speciesData: PokeApiSpecies = await speciesRes.json()
+        const speciesData: PokeApiSpecies = await fetchWithRetry(entry.pokemon_species.url)
         const pokemonId = speciesData.id
 
-        // 2. Lógica de Variedade Regional (Alola)
+        // --- ALTERAÇÃO CRÍTICA AQUI: BUSCA DO NOME TRADUZIDO ---
+        const nameEntry = speciesData.names.find(n => n.language.name === apiLang)
+        const fallbackName = speciesData.names.find(n => n.language.name === 'en')?.name
+          console.log('translatedName')
+        // Se for japonês, tenta ja-Hrkt. Se for outro, tenta o idioma ou fallback inglês formatado.
+        const translatedName = nameEntry?.name || fallbackName || entry.pokemon_species.name
+        console.log(translatedName)
         const regionalVariety = speciesData.varieties.find(
           v => isSM && v.pokemon.name.includes('-alola')
         )
-
         const defaultVariety = speciesData.varieties.find(v => v.is_default)
 
-        // Se for Kalos ou comum, regionalVariety será undefined e ele usará a default.
         const targetPokemonUrl = regionalVariety
           ? regionalVariety.pokemon.url
-          : defaultVariety?.pokemon.url ||
-            `https://pokeapi.co/api/v2/pokemon/${pokemonId}`
+          : defaultVariety?.pokemon.url || `https://pokeapi.co/api/v2/pokemon/${pokemonId}`
 
-        const [detailRes, encounterRes] = await Promise.all([
-          fetch(targetPokemonUrl),
-          fetch(`${targetPokemonUrl}/encounters`)
+        const [detailData, encounterData] = await Promise.all([
+          fetchWithRetry<{ sprites: { front_default: string } }>(targetPokemonUrl),
+          fetchWithRetry<PokeApiEncounter[]>(`${targetPokemonUrl}/encounters`)
         ])
 
-        const detailData = await detailRes.json()
-        const encounterData: PokeApiEncounter[] = await encounterRes.json()
-
-        let translatedName = entry.pokemon_species.name
-        if (lang === 'ja') {
-          translatedName =
-            speciesData.names.find(n => n.language.name === 'ja-Hrkt')?.name ||
-            translatedName
-        }
-
-        // 3. Processamento de Rotas (Filtrando pelas versionTags corretas)
         const routes = encounterData
-          .filter(enc =>
-            enc.version_details.some(v => versionTags.includes(v.version.name))
-          )
+          .filter(enc => enc.version_details.some(v => versionTags.includes(v.version.name)))
           .map(enc => {
-            const versionDetail = enc.version_details.find(v =>
-              versionTags.includes(v.version.name)
-            )
-            const methodFromApi =
-              versionDetail?.encounter_details[0]?.method.name || ''
-            const methodKey = methodFromApi.replace(
-              /-/g,
-              '_'
-            ) as keyof typeof translations['en']
+            const versionDetail = enc.version_details.find(v => versionTags.includes(v.version.name))
+            const methodFromApi = versionDetail?.encounter_details[0]?.method.name || ''
+            const methodKey = methodFromApi.replace(/-/g, '_') as keyof typeof translations['en']
             const methodLabel = translations[lang][methodKey] || methodFromApi
 
             let locationName = enc.location_area.name
@@ -102,12 +95,9 @@ export const fetchPokemonData = async (
 
             const routeWord = translations[lang]['route'] || 'Route'
             locationName = locationName.replace(/route/i, routeWord)
-            const formattedName =
-              locationName.charAt(0).toUpperCase() + locationName.slice(1)
+            const formattedName = locationName.charAt(0).toUpperCase() + locationName.slice(1)
 
-            return methodFromApi
-              ? `${formattedName} (${methodLabel})`
-              : formattedName
+            return methodFromApi ? `${formattedName} (${methodLabel})` : formattedName
           })
 
         const availableVersions = encounterData
@@ -119,37 +109,22 @@ export const fetchPokemonData = async (
         if (isXY) {
           const hasX = uniqueVersions.includes('x')
           const hasY = uniqueVersions.includes('y')
-
-          // Se tiver ambos ou nenhum (caso de Gifts/Evoluções), marca como 'Both'
           if ((hasX && hasY) || (!hasX && !hasY)) availabilityLabel = 'Both'
           else if (hasX) availabilityLabel = 'X'
           else if (hasY) availabilityLabel = 'Y'
-        } else if (isSM) {
-          const hasSun = uniqueVersions.includes('sun')
-          const hasMoon = uniqueVersions.includes('moon')
-
-          if ((hasSun && hasMoon) || (!hasSun && !hasMoon))
-            availabilityLabel = 'Both'
-          else if (hasSun) availabilityLabel = 'Sun'
-          else if (hasMoon) availabilityLabel = 'Moon'
         }
 
         const uniqueRoutes = Array.from(new Set(routes))
-        const specialEvolutionLabel =
-          translations[lang]['special_evolution'] || 'Special / Evolution'
+        const specialEvolutionLabel = translations[lang]['special_evolution'] || 'Special / Evolution'
 
         return {
           id: pokemonId,
-          name:
-            lang === 'ja'
-              ? translatedName
-              : translatedName.charAt(0).toUpperCase() +
-                translatedName.slice(1),
-          sprite:
-            detailData.sprites.front_default ||
-            `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`,
-          routes:
-            uniqueRoutes.length > 0 ? uniqueRoutes : [specialEvolutionLabel],
+          // Se for japonês, mantém como está. Se for ocidental, garante a primeira letra maiúscula.
+          name: lang === 'ja' 
+            ? translatedName 
+            : translatedName.charAt(0).toUpperCase() + translatedName.slice(1),
+          sprite: detailData.sprites.front_default || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`,
+          routes: uniqueRoutes.length > 0 ? uniqueRoutes : [specialEvolutionLabel],
           captureRate: speciesData.capture_rate,
           availability: availabilityLabel
         }
@@ -160,121 +135,14 @@ export const fetchPokemonData = async (
     }
   )
 
-  const results = await Promise.all(pokemonPromises)
-  return results.filter((p): p is PokemonBase => p !== null)
+  const results: PokemonBase[] = []
+  const batchSize = 20
+
+  for (let i = 0; i < pokemonPromises.length; i += batchSize) {
+    const batch = pokemonPromises.slice(i, i + batchSize)
+    const batchResults = await Promise.all(batch)
+    results.push(...batchResults.filter((p): p is PokemonBase => p !== null))
+  }
+
+  return results
 }
-// export const fetchPokemonData = async (
-//   pokedexName: string,
-//   gameId: string,
-//   lang: 'pt-BR' | 'en' | 'ja' = 'pt-BR'
-// ): Promise<PokemonBase[]> => {
-//   const response = await fetch(
-//     `https://pokeapi.co/api/v2/pokedex/${pokedexName}`
-//   )
-//   const data = await response.json()
-
-//   const isXY =
-//     gameId.toLowerCase().includes('xy') ||
-//     gameId.toLowerCase().includes('kalos')
-//   const isSM =
-//     gameId.toLowerCase().includes('sun') ||
-//     gameId.toLowerCase().includes('moon')
-//   // const versionTags = isXY ? ['x', 'y'] : [gameId.split('-')[0]];
-//   let versionTags = [gameId.toLowerCase()]
-//   if (isXY) versionTags = ['x', 'y']
-//   if (isSM) versionTags = ['sun', 'moon']
-
-//   const pokemonPromises = data.pokemon_entries.map(
-//     async (entry: PokeApiPokedexEntry) => {
-//       try {
-//         const pokemonId = Number(
-//           entry.pokemon_species.url.split('/').filter(Boolean).pop()
-//         )
-
-//         const [detailRes, encounterRes] = await Promise.all([
-//           fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`),
-//           fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}/encounters`)
-//         ])
-
-//         const detailData = await detailRes.json()
-//         const encounterData: PokeApiEncounter[] = await encounterRes.json()
-
-//         const speciesRes = await fetch(detailData.species.url)
-//         const speciesData: PokeApiSpecies = await speciesRes.json()
-
-//         let translatedName = entry.pokemon_species.name
-//         if (lang === 'ja') {
-//           translatedName =
-//             speciesData.names.find(n => n.language.name === 'ja-Hrkt')?.name ||
-//             speciesData.names.find(n => n.language.name === 'ja')?.name ||
-//             translatedName
-//         }
-
-//         // Processamento de Rotas e Métodos de Encontro
-//         const routes = encounterData
-//           .filter(enc =>
-//             enc.version_details.some(v => versionTags.includes(v.version.name))
-//           )
-//           .map(enc => {
-//             const versionDetail = enc.version_details.find(v =>
-//               versionTags.includes(v.version.name)
-//             )
-
-//             // 1. Extraímos o método original da API (ex: walk, old-rod)
-//             const methodFromApi =
-//               versionDetail?.encounter_details[0]?.method.name || ''
-
-//             // 2. Formatamos para bater com as chaves do seu translations.ts (ex: walk, old_rod)
-//             const methodKey = methodFromApi.replace(
-//               /-/g,
-//               '_'
-//             ) as keyof typeof translations['en']
-
-//             // 3. Buscamos a tradução. Se não existir no dicionário, usamos o nome original.
-//             const methodLabel = translations[lang][methodKey] || methodFromApi
-
-//             let locationName = enc.location_area.name
-//               .replace(/-/g, ' ')
-//               .replace(/area/g, '')
-//               .replace(/kalos/gi, '')
-//               .trim()
-
-//             const routeWord = translations[lang]['route'] || 'Route'
-//             locationName = locationName.replace(/route/i, routeWord)
-
-//             const formattedName =
-//               locationName.charAt(0).toUpperCase() + locationName.slice(1)
-
-//             return methodFromApi
-//               ? `${formattedName} (${methodLabel})`
-//               : formattedName
-//           })
-
-//         const uniqueRoutes = Array.from(new Set(routes))
-
-//         // Busca a tradução de "Especial / Evolução" do seu arquivo
-//         const specialEvolutionLabel =
-//           translations[lang]['special_evolution'] || 'Special / Evolution'
-
-//         return {
-//           id: pokemonId,
-//           name:
-//             lang === 'ja'
-//               ? translatedName
-//               : translatedName.charAt(0).toUpperCase() +
-//                 translatedName.slice(1),
-//           sprite: detailData.sprites.front_default,
-//           routes:
-//             uniqueRoutes.length > 0 ? uniqueRoutes : [specialEvolutionLabel],
-//           captureRate: speciesData.capture_rate
-//         }
-//       } catch (error) {
-//         console.error('Erro ao buscar:', entry.pokemon_species.name, error)
-//         return null
-//       }
-//     }
-//   )
-
-//   const results = await Promise.all(pokemonPromises)
-//   return results.filter((p): p is PokemonBase => p !== null)
-// }

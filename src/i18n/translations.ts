@@ -40,7 +40,11 @@ export const translations = {
     bridge_spots: 'Ponte (Sombra)',
     sea_foam: 'Espuma do Mar',
     route: 'Rota',
-    sync: 'Gerar Link'
+    sync: 'Gerar Link',
+    clean: 'Limpar',
+    pokemon_name: "Nome do Pokémon",
+    filter_by_location: "Filtrar por Localização",
+    all_routes: "Todas as Rotas"
   },
   en: {
     home_title: 'Select your journey to start the checklist',
@@ -83,7 +87,11 @@ export const translations = {
     bridge_spots: 'Bridge Shadow',
     sea_foam: 'Sea Foam',
     route: 'Route',
-    sync: 'Generate Sync Link'
+    sync: 'Generate Sync Link',
+    clean: 'Clear',
+    pokemon_name: "Pokemon Name",
+    filter_by_location: "Filter by Location",
+    all_routes: "All Routes"
   },
   ja: {
     home_title: 'チェックリストを開始するリージョンを選択してください',
@@ -126,6 +134,10 @@ export const translations = {
     bridge_spots: '橋の影',
     sea_foam: '海泡',
     route: 'どうろ',
-    sync: 'リンクの生成'
+    sync: 'リンクの生成',
+    clean: 'クリア',
+    pokemon_name: "ポケモンの名前",
+    filter_by_location: "出現場所で探す",
+    all_routes: "すべての場所"
   }
 }

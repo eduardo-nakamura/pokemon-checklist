@@ -1,7 +1,6 @@
 import React from 'react'
 import type { PokemonBase } from '../types/pokemon'
 
-// Sub-componente de Highlight com React.memo para evitar re-renderizações desnecessárias
 const HighlightText = React.memo(
   ({ text, highlight }: { text: string; highlight?: string }) => {
     if (!highlight || !highlight.trim()) return <>{text}</>
@@ -29,7 +28,6 @@ const HighlightText = React.memo(
 interface PokemonRowProps {
   pokemon: PokemonBase
   isCaught: boolean
-  // MUDANÇA: Agora recebe o objeto completo e o gameId
   onToggle: (gameId: string, pokemon: PokemonBase) => void
   gameId: string
   isDarkMode: boolean
@@ -45,9 +43,15 @@ export const PokemonTableRow = React.memo(
     isDarkMode,
     highlight
   }: PokemonRowProps) => {
+    
+    // Helper para manter o fundo sólido nas colunas fixas durante o hover e seleção
+    const getStickyBg = () => {
+      if (isCaught) return isDarkMode ? 'bg-[#1a2e25]' : 'bg-[#f0fdf4]' // Verde suave para capturados
+      return isDarkMode ? 'bg-slate-900 group-hover:bg-slate-800' : 'bg-white group-hover:bg-slate-50'
+    }
+
     return (
       <tr
-        // MUDANÇA: Passando gameId e o objeto pokemon inteiro para a Store
         onClick={() => onToggle(gameId, pokemon)}
         className={`group transition-colors cursor-pointer select-none border-b last:border-0 ${
           isCaught
@@ -59,50 +63,49 @@ export const PokemonTableRow = React.memo(
             : 'hover:bg-slate-50 border-slate-200'
         }`}
       >
+        {/* COLUNA 1: ID (FIXA) */}
         <td
-          className={`p-4 text-xs font-mono ${
+          className={`p-4 text-xs font-mono sticky left-0 z-10 transition-colors ${getStickyBg()} ${
             isDarkMode ? 'text-slate-400' : 'text-slate-500'
           }`}
         >
           #{String(pokemon.id).padStart(3, '0')}
         </td>
 
-        <td className='p-4'>
-          <img
-            src={pokemon.sprite}
-            alt={pokemon.name}
-            loading='lazy'
-            decoding='async'
-            // Estratégia: Se a imagem falhar, carrega um placeholder e diminui a opacidade
-            onError={e => {
-              const target = e.target as HTMLImageElement
-              // 3. FALLBACK RÁPIDO: O GitHub costuma ser 3x mais rápido que a PokeAPI no mobile
-              target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`
-            }}
-            className={`w-10 h-10 object-contain group-hover:scale-125 transition-transform duration-300 relative z-10
-        ${!pokemon.sprite ? 'opacity-0' : 'opacity-100'}`}
-          />
-
-          {/* Skeleton/Placeholder de fundo enquanto carrega */}
-          <div
-            className={`absolute inset-0 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse z-0 
-            ${pokemon.sprite ? 'hidden' : 'block'}`}
-          />
+        {/* COLUNA 2: SPRITE (FIXA) */}
+        <td className={`p-4 sticky left-13.75 z-10 transition-colors ${getStickyBg()}`}>
+          <div className="relative w-10 h-10">
+            <img
+              src={pokemon.sprite}
+              alt={pokemon.name}
+              loading='lazy'
+              decoding='async'
+              onError={e => {
+                const target = e.target as HTMLImageElement
+                target.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`
+              }}
+              className={`w-10 h-10 object-contain group-hover:scale-125 transition-transform duration-300 relative z-10
+                ${!pokemon.sprite ? 'opacity-0' : 'opacity-100'}`}
+            />
+            <div
+              className={`absolute inset-0 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse z-0 
+                ${pokemon.sprite ? 'hidden' : 'block'}`}
+            />
+          </div>
         </td>
 
+        {/* COLUNA 3: NOME (FIXA) */}
         <td
-          className={`p-4 font-bold ${
+          className={`p-4 font-bold sticky left-26.25 z-10 border-r transition-colors ${getStickyBg()} ${
             isCaught
-              ? isDarkMode
-                ? 'text-green-400'
-                : 'text-green-600'
-              : isDarkMode
-              ? 'text-slate-200'
-              : 'text-slate-800'
-          }`}
+              ? isDarkMode ? 'text-green-400' : 'text-green-600'
+              : isDarkMode ? 'text-slate-200' : 'text-slate-800'
+          } ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}
         >
           <HighlightText text={pokemon.name} highlight={highlight} />
         </td>
+
+        {/* COLUNAS RESTANTES (ROLAGEM NORMAL) */}
         <td className='p-4'>
           {pokemon.availability && (
             <div className='flex flex-wrap gap-1'>
@@ -127,11 +130,8 @@ export const PokemonTableRow = React.memo(
             </div>
           )}
         </td>
-        <td
-          className={`p-4 text-sm italic ${
-            isDarkMode ? 'text-slate-400' : 'text-slate-600'
-          }`}
-        >
+
+        <td className={`p-4 text-sm italic ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
           <div className='flex flex-wrap gap-1'>
             {pokemon.routes.map((route, index) => (
               <span key={index}>
@@ -153,15 +153,9 @@ export const PokemonTableRow = React.memo(
                   : 'bg-red-100 text-red-700'
               }`}
             >
-              {pokemon.captureRate > 150
-                ? 'Fácil'
-                : pokemon.captureRate > 50
-                ? 'Médio'
-                : 'Difícil'}
+              {pokemon.captureRate > 150 ? 'Fácil' : pokemon.captureRate > 50 ? 'Médio' : 'Difícil'}
             </span>
-            <span className='text-[10px] opacity-50 font-mono'>
-              {pokemon.captureRate}
-            </span>
+            <span className='text-[10px] opacity-50 font-mono'>{pokemon.captureRate}</span>
           </div>
         </td>
 
@@ -169,7 +163,7 @@ export const PokemonTableRow = React.memo(
           <input
             type='checkbox'
             checked={isCaught}
-            readOnly // Evita warnings de onChange sem handler direto no input
+            readOnly
             className={`w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer ${
               isDarkMode ? 'accent-green-500' : 'accent-green-600'
             }`}
