@@ -54,7 +54,7 @@ export const SubRegionCombobox: React.FC<SubRegionComboboxProps> = ({
   }
 
   return (
-    <div ref={comboboxRef} className='w-full md:w-80 relative'>
+    <div ref={comboboxRef} className='w-full  relative'>
       <label className='block text-[10px] font-black uppercase text-slate-500 mb-1 ml-1 tracking-widest'>
         {t('filter_by_location')}
       </label>

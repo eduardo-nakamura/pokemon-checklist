@@ -9,7 +9,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister }}
+      persistOptions={{
+        persister
+      }}
+      onSuccess={() => {
+        console.log('Cache recuperado do localStorage!')
+      }}
     >
       <App />
     </PersistQueryClientProvider>

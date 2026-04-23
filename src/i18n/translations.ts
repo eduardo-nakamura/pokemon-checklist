@@ -44,7 +44,8 @@ export const translations = {
     clean: 'Limpar',
     pokemon_name: "Nome do Pokémon",
     filter_by_location: "Filtrar por Localização",
-    all_routes: "Todas as Rotas"
+    all_routes: "Todas as Rotas",
+    location: "Local"
   },
   en: {
     home_title: 'Select your journey to start the checklist',
@@ -91,7 +92,8 @@ export const translations = {
     clean: 'Clear',
     pokemon_name: "Pokemon Name",
     filter_by_location: "Filter by Location",
-    all_routes: "All Routes"
+    all_routes: "All Routes",
+    location: "Location"
   },
   ja: {
     home_title: 'チェックリストを開始するリージョンを選択してください',
@@ -138,6 +140,7 @@ export const translations = {
     clean: 'クリア',
     pokemon_name: "ポケモンの名前",
     filter_by_location: "出現場所で探す",
-    all_routes: "すべての場所"
+    all_routes: "すべての場所",
+    location: "ロケーション"
   }
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import type { PokemonBase } from '../types/pokemon'
 import { PokemonTableRow } from './PokemonTableRow'
 import { useTranslation } from '../hooks/useTranslation'
@@ -12,6 +12,8 @@ interface PokemonTableProps {
   gameId: string
   isLoading: boolean
   highlight?: string
+  currentPage: number
+  setCurrentPage: Dispatch<SetStateAction<number>>
 }
 
 type SortKey = 'id' | 'name' | 'captureRate' | 'status' | 'routes' | 'availability'
@@ -22,7 +24,9 @@ export function PokemonTable({
   onToggle,
   gameId,
   isLoading,
-  highlight
+  highlight,
+  currentPage,  
+  setCurrentPage
 }: PokemonTableProps) {
   const { t } = useTranslation()
   const { isDarkMode } = useSettingsStore()
@@ -31,7 +35,7 @@ export function PokemonTable({
     direction: 'asc' | 'desc'
   } | null>(null)
   
-  const [currentPage, setCurrentPage] = useState(1)
+  
   const itemsPerPage = 20
 
   const sortedList = useMemo(() => {
