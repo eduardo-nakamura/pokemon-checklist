@@ -13,6 +13,8 @@ import { useDebounce } from '../hooks/useDebounce'
 import { SubRegionCombobox } from '../components/SubRegionCombobox'
 import { XCircle, RefreshCw } from 'lucide-react'
 
+type FilterStatus = 'all' | 'captured' | 'missing';
+
 export function GameChecklist () {
   const { gameId } = useParams<{ gameId: string }>()
   const navigate = useNavigate()
@@ -20,6 +22,7 @@ export function GameChecklist () {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedRoutes, setSelectedRoutes] = useState<string[]>(['all'])
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const debouncedSearch = useDebounce(searchTerm, 300)
 
   const { language, isDarkMode } = useSettingsStore()
@@ -47,17 +50,31 @@ export function GameChecklist () {
     staleTime: Infinity
   })
 
+  // GameChecklist.tsx
   const filteredList = useMemo(() => {
     return list.filter(p => {
+      // Filtro por Nome
       const nameMatch = p.name
         .toLowerCase()
         .includes(debouncedSearch.toLowerCase())
+
+      // Filtro por Rota
       const routeMatch = selectedRoutes.includes('all')
         ? true
         : p.routes.some(r => selectedRoutes.includes(r))
-      return nameMatch && routeMatch
+
+      // NOVO: Filtro por Status de Captura
+      const isCaptured = checkedIds.includes(p.id)
+      const statusMatch =
+        filterStatus === 'all'
+          ? true
+          : filterStatus === 'captured'
+          ? isCaptured
+          : !isCaptured
+
+      return nameMatch && routeMatch && statusMatch
     })
-  }, [list, debouncedSearch, selectedRoutes])
+  }, [list, debouncedSearch, selectedRoutes, filterStatus, checkedIds])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
@@ -67,6 +84,7 @@ export function GameChecklist () {
   const handleClearFilters = () => {
     setSearchTerm('')
     setSelectedRoutes(['all'])
+    setFilterStatus('all')
     setCurrentPage(1)
   }
 
@@ -168,7 +186,6 @@ export function GameChecklist () {
             {/* Localização e Limpar */}
             <div className='md:col-span-7 flex items-end gap-2'>
               <div className='flex-1 relative'>
-               
                 <SubRegionCombobox
                   allRoutes={allRoutes}
                   selectedRoutes={selectedRoutes}
@@ -208,6 +225,32 @@ export function GameChecklist () {
         </div>
 
         {/* Tabela com Overlay de carregamento corrigido */}
+
+       <div className='flex flex-wrap gap-2 mb-6'>
+  {(['all', 'captured', 'missing'] as FilterStatus[]).map((status) => (
+    <button
+      key={status}
+      onClick={() => {
+        setFilterStatus(status); // Agora o TypeScript aceita sem o 'as any'
+        setCurrentPage(1);
+      }}
+      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+        filterStatus === status
+          ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-600/20'
+          : isDarkMode
+          ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+          : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+      }`}
+    >
+      {status === 'all' ? t('filter_all') : 
+       status === 'captured' ? t('filter_captured') : 
+       t('filter_missing')}
+    </button>
+  ))}
+</div>
+
+
+
         <div
           className={`relative rounded-3xl border overflow-hidden shadow-2xl transition-colors duration-300 ${
             isDarkMode
@@ -220,6 +263,7 @@ export function GameChecklist () {
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-red-600'></div>
             </div>
           )}
+
           <PokemonTable
             list={filteredList}
             isLoading={isLoading}
